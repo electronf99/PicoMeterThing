@@ -37,7 +37,7 @@ async def main():
                 print(data_bytes)
                 await client.write_gatt_char(characteristic_uuid, data_bytes)
             
-                sleep(0.5)
+                sleep(0.2)
 
 asyncio.run(main())
 
