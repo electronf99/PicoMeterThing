@@ -1,29 +1,35 @@
+# Import necessary modules
+from machine import Pin
+import bluetooth
+from ble_simple_peripheral import BLESimplePeripheral
+from lcd1602 import LCD1602
+import json
+import binascii
 
-from bluetooth import BLE
-import ubluetooth
-import time
+# Create a Bluetooth Low Energy (BLE) object
+ble = bluetooth.BLE()
 
-ble = BLE()
-ble.active(True)
+# Create an instance of the BLESimplePeripheral class with the BLE object
+sp = BLESimplePeripheral(ble,"pico2w")
+lcd = LCD1602.begin_4bit(rs=16, e=17, db_7_to_4=[21, 20, 19, 18])
 
-# Define a simple BLE UART service (Nordic UART Service)
-UART_UUID = ubluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
-TX_UUID = ubluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
-RX_UUID = ubluetooth.UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
+def update_traffic(data):
+    print(f"----->{data}")
+    decoded_data = binascii.a2b_base64(data.decode('utf-8').rstrip('\r\n'))
+    print(f"blah: {decoded_data}")
+    data = json.loads(decoded_data)
+    duty_cycle = (data['l'] / 1000) * 32767 +32767
+    lcd.write_text(0,1,str(data['l']) + " " + str(duty_cycle))
 
-UART_SERVICE = (
-    UART_UUID,
-    (
-        (TX_UUID, ubluetooth.FLAG_NOTIFY,),
-        (RX_UUID, ubluetooth.FLAG_WRITE,),
-    ),
-)
+    
 
-ble.config(gap_name="PicoBLE")
-ble.gatts_register_services((UART_SERVICE,))
-ble.gap_advertise(100, b'\x02\x01\x06\x03\x03\x9e\xfe')
+# Define a callback function to handle received data
+def on_rx(data):
+    print("Data received: ", data)  # Print the received data
 
+    update_traffic(data)
 
+# Start an infinite loop
 while True:
-    time.sleep(1)
-
+    if sp.is_connected():  # Check if a BLE connection is established
+        sp.on_write(on_rx)  # Set the callback function for data reception
