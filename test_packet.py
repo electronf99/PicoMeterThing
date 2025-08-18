@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from ble20Packets import ble20Packets
+from ble20PacketsMpy import ble20Packets
 
 msg_id = 1
 transmission = {
@@ -30,7 +30,7 @@ packets = packer.build_packets(transmission)
 for packet in packets:
     print(packet)
 
-msg_id, data = packer.decode_packets(packets)
+msg_id, data = packer.decode_packets(packets) # type: ignore
 
 print(f"Message {msg_id}:")
 print(data)

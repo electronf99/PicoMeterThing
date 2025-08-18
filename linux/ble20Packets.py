@@ -1,29 +1,39 @@
 import json
-import zlib
 
-
+#
+# Handle Json STring encoded to fit in 20 byte BLE packets
+# Includes headers + payload
+#
 class ble20Packets:
     def __init__(self, message_id=1, max_payload=17):
         self.message_id = message_id
         self.max_payload = max_payload
 
+    # Take a Json String, encode it and build a list of 20 byte packets
+    # including message id and number of packets
+    # 
     def build_packets(self, json_str):
         json_str = json.dumps(json_str, separators=(",", ":"))
 
-        compressed = zlib.compress(json_str.encode("utf-8"))
+        encoded = json_str.encode("utf-8")
         chunk_size = self.max_payload
-        chunks = [compressed[i : i + chunk_size] for i in range(0, len(compressed), chunk_size)]
+        chunks = [encoded[i : i + chunk_size] for i in range(0, len(encoded), chunk_size)]
         total_packets = len(chunks)
         msg_id = self.message_id
 
         packets = []
         for seq, chunk in enumerate(chunks):
             header = bytes([seq, total_packets, msg_id])
-            packet = header + chunk.ljust(self.max_payload, b"\x00")  # pad to full size
+            chunk += b"\x00" * (self.max_payload - len(chunk))
+            packet = header + chunk  # pad to full size
             packets.append(packet)
 
         return packets
 
+
+    # Take a list of 20 byte BLE packets, decode them, strip headers and rebuild 
+    # into Json String. Return the results as a dict
+ 
     def decode_packets(self, received_packets):
         buffer = {}
         for packet in received_packets:
@@ -35,7 +45,6 @@ class ble20Packets:
             print("Still missing packets after retry.")
         else:
             full_data = b"".join(buffer[i] for i in range(total_packets))
-            decompressed = zlib.decompress(full_data).decode("utf-8")
-            reconstructed = json.loads(decompressed)
+            reconstructed = json.loads(full_data.decode("utf-8"))
 
-            return msg_id, reconstructed
+            return msg_id, seq, reconstructed

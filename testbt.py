@@ -4,8 +4,7 @@ import machine
 import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
 from lcd1602 import LCD1602
-import json
-import binascii
+from ble20PacketsMpy import ble20Packets
 
 # Create a Bluetooth Low Energy (BLE) object
 ble = bluetooth.BLE()
@@ -23,13 +22,26 @@ volt_meter.freq(frequency)
 
 
 def update_traffic(data):
-    decoded_data = binascii.a2b_base64(data.decode("utf-8").rstrip("\r\n"))
-    print(f"{data} {decoded_data}")
 
-    data = json.loads(decoded_data)
-    duty_cycle = (data["l"] / 1000) * 32767 + 32767
-    lcd.write_text(0, 1, str(data["l"]) + " " + str(duty_cycle))
-    volt_meter.duty_u16(int(duty_cycle))
+    packet_array=[]
+    packet_array.append(data)
+    print(packet_array)
+    packer = ble20Packets(message_id=1, max_payload=17)
+    print("after create packer")
+    msg_id, seq, decoded_data = packer.decode_paqqqqqqqckets(packet_array) # type: ignore
+
+    print(msg_id, seq, decoded_data)
+
+    #decoded_data = data.decode('utf-8').rstrip('\r\n')
+
+    
+    #print(f"{data} {decoded_data}")
+
+    # data = json.loads(decoded_data)
+    # duty_cycle = (data['l'] / 1000) * 32767 +32767
+    # lcd.write_text(0,1,str(data['l']) + " " + str(duty_cycle))
+    # volt_meter.duty_u16(int(duty_cycle))
+
 
 
 # Define a callback function to handle received data
