@@ -23,9 +23,10 @@ frequency = 5000
 volt_meter.freq (frequency)
 
 def update_traffic(data):
-    print(f"----->{data}")
+
     decoded_data = binascii.a2b_base64(data.decode('utf-8').rstrip('\r\n'))
-    print(f"blah: {decoded_data}")
+    print(f"{data} {decoded_data}")
+
     data = json.loads(decoded_data)
     duty_cycle = (data['l'] / 1000) * 32767 +32767
     lcd.write_text(0,1,str(data['l']) + " " + str(duty_cycle))
@@ -35,8 +36,7 @@ def update_traffic(data):
 
 # Define a callback function to handle received data
 def on_rx(data):
-    print("Data received: ", data)  # Print the received data
-
+    
     update_traffic(data)
 
 # Start an infinite loop

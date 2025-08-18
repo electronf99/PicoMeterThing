@@ -27,17 +27,15 @@ async def main():
             for i in range(0,180, 1):
                 sin = math.sin(math.radians(i))
                 v = int(sin*1000)
-                print(v)
-
                 a += 1
                 data['l'] = v
                 j = json.dumps(data)
+                
                 data_bytes = b64encode(j.encode('utf-8'))
-
-                print(data_bytes)
+                print(f"{j} {data_bytes}")
                 await client.write_gatt_char(characteristic_uuid, data_bytes)
             
-                sleep(0.2)
+                sleep(0.1)
 
 asyncio.run(main())
 
