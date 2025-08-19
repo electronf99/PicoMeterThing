@@ -11,7 +11,6 @@ import binascii
 ble = bluetooth.BLE()
 
 # Create an instance of the BLESimplePeripheral class with the BLE object
-sp = BLESimplePeripheral(ble,"pico2w")
 lcd = LCD1602.begin_4bit(rs=16, e=17, db_7_to_4=[21, 20, 19, 18])
 
 # Set up PWM Pin
@@ -39,7 +38,12 @@ def on_rx(data):
     
     update_traffic(data)
 
-# Start an infinite loop
-while True:
-    if sp.is_connected():  # Check if a BLE connection is established
-        sp.on_write(on_rx)  # Set the callback function for data reception
+
+if __name__ == "__main__":
+
+    sp = BLESimplePeripheral(ble,"pico2w")
+
+    # Start an infinite loop
+        while True:
+        if sp.is_connected():  # Check if a BLE connection is established
+            sp.on_write(on_rx)  # Set the callback function for data reception
