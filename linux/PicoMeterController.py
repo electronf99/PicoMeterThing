@@ -21,23 +21,23 @@ async def main():
                 "Line1": {"text": "This is a test", "startcol": 0},
                 "Line2": {"text": 1, "startcol": 0},
             },
-            "baseVoltage": 19.5,
-            "meters": {
-                "MovingIron": {
-                    "duty_min": 32768,
-                    "duty_max": 65535,
-                    "value": 3,
-                    "fullscale": 19,
-                },
-                "20VPlastic": {
-                    "duty_min": 32768,
-                    "duty_max": 65535,
-                    "value": 3,
-                    "fullscale": 19,
-                },
+        "baseVoltage": 19.5,
+        "meters": {
+            "MovingIron": {
+                "duty_min": 32768,
+                "duty_max": 65535,
+                "value": 3,
+                "fullscale": 19,
             },
+            "20VPlastic": {
+                "duty_min": 32768,
+                "duty_max": 65535,
+                "value": 3,
+                "fullscale": 19,
+            },
+        },
         }
-    packets = packer.build_packets(transmission)
+    
 
  
     async with BleakClient(ble_address) as client:
@@ -46,14 +46,16 @@ async def main():
         # data[0] = 1
         a=0
         while(1==1):
+            a += 1
+            transmission["LCD"]["Line1"]["text"] = str(a)
+            packets = packer.build_packets(transmission)
             
-
+            
             for packet in packets:
                 print(packet)
-
                 await client.write_gatt_char(characteristic_uuid, packet)
         
-            sleep(0.1)
+            sleep(0.01)
 
 asyncio.run(main())
 

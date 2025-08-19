@@ -5,6 +5,7 @@ import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
 from lcd1602 import LCD1602
 from ble20PacketsMpy import ble20Packets
+import json
 
 # Create a Bluetooth Low Energy (BLE) object
 ble = bluetooth.BLE()
@@ -20,33 +21,42 @@ volt_meter = PWM(volt_pin)
 frequency = 5000
 volt_meter.freq(frequency)
 
+rx_packets = []
 
 def update_traffic(data):
 
-    packet_array=[]
-    packet_array.append(data)
-    print(packet_array)
-    packer = ble20Packets(message_id=1, max_payload=17)
-    print("after create packer")
-    msg_id, seq, decoded_data = packer.decode_paqqqqqqqckets(packet_array) # type: ignore
+    LCDLine1 = data['LCD']['Line1']['text']
+    print(LCDLine1)
+    lcd.write_text(0,1,LCDLine1)
 
-    print(msg_id, seq, decoded_data)
-
-    #decoded_data = data.decode('utf-8').rstrip('\r\n')
-
-    
-    #print(f"{data} {decoded_data}")
 
     # data = json.loads(decoded_data)
     # duty_cycle = (data['l'] / 1000) * 32767 +32767
     # lcd.write_text(0,1,str(data['l']) + " " + str(duty_cycle))
     # volt_meter.duty_u16(int(duty_cycle))
 
-
-
 # Define a callback function to handle received data
 def on_rx(data):
-    update_traffic(data)
+
+    global rx_packets
+    
+    seq, total_packets, msg_id = data[0], data[1], data[2]
+    if(seq==0):
+        rx_packets = []
+    
+    payload = data[3:].rstrip(b"\x00")
+    rx_packets.append(payload)
+    
+    if( total_packets == seq + 1):
+        full_payload = ""
+        for packet in rx_packets:
+            full_payload = full_payload + packet.decode("utf-8")
+        
+        message = json.loads(full_payload)
+        print(message)
+
+
+        update_traffic(message)
 
 
 if __name__ == "__main__":
