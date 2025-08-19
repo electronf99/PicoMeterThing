@@ -13,6 +13,18 @@ class BLEPacketReceiver:
 
         self._setup_services()
 
+    def _advertising_payload(self, name=None):
+        payload = bytearray()
+
+        if name:
+            name_bytes = name.encode()
+            payload += bytes((len(name_bytes) + 1, 0x09)) + name_bytes  # 0x09 = Complete Local Name
+
+        # Add flags (general discoverable mode, BR/EDR not supported)
+        payload = bytes((2, 0x01, 0x06)) + payload
+
+        return payload
+
     def _setup_services(self):
         UART_UUID = bluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
         TX_UUID = bluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
@@ -21,7 +33,16 @@ class BLEPacketReceiver:
 
         ((self.tx_handle,),) = self.ble.gatts_register_services(services)
         self.ble.gatts_write(self.tx_handle, b"")
-        self.ble.gap_advertise(100, b"\x02\x01\x06\x03\x03\x9e\xca")
+
+        # Set device name
+        device_name = "MyBLEDevice"
+        self.ble.config(gap_name=device_name)
+
+        # Build advertising payload with device name
+        adv_payload = self._advertising_payload(name=device_name)
+        self.ble.gap_advertise(100, adv_payload)
+        print(f"BLE advertising as '{device_name}'...")
+
         print("BLE advertising...")
 
     def _irq(self, event, data):
