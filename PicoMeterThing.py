@@ -89,9 +89,11 @@ def decode(data):
 
 def update_traffic(data):
 
-    LCDLine0 = data['LCD']['0']['txt']
+    LCDLine0 = data['LCD']['0']
+    LCDLine1 = data['LCD']['1']
     moving_iron_volts = data["meter"]["m1"]["val"]
     lcd.write_text(0,0,LCDLine0)
+    lcd.write_text(0,1,LCDLine1)
     volt_meter.duty_u16(int(moving_iron_volts))
 
 # Define a callback function to handle received data
@@ -107,13 +109,12 @@ def on_rx(data):
     rx_packets.append(payload)
     
     if( total_packets == seq + 1):
-        print(total_packets)
         full_payload = b""
         for packet in rx_packets:
             full_payload = full_payload + packet
                     
         message = decode(full_payload)
-        print(message)
+        print(total_packets, message)
         update_traffic(message)
 
 
