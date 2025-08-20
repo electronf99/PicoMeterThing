@@ -7,6 +7,8 @@ import json
 from base64 import b64encode
 import math
 from ble20Packets import ble20Packets
+import msgpack
+
 
 async def main():
 
@@ -18,24 +20,24 @@ async def main():
     
     transmission = {
         "LCD": {
-                "Line1": {"text": "This is a test", "startcol": 0},
-                "Line2": {"text": 1, "startcol": 0},
+                "0": {"txt": "This is a test"},
+ #               "Line2": {"text": 1, "startcol": 0},
             },
-        "baseVoltage": 19.5,
-        "meters": {
-            "MovingIron": {
-                "duty_min": 32768,
-                "duty_max": 65535,
-                "value": 3,
-                "fullscale": 19,
+ #       "baseVoltage": 19.5,
+        "meter": {
+            "m1": {
+ #               "duty_min": 32768,
+ #               "duty_max": 65535,
+                "v": 3,
+ #               "fullscale": 19,
+                },
+            "m2": {
+            #     "duty_min": 32768,
+            #     "duty_max": 65535,
+                "v": 3,
+            #     "fullscale": 19,
+                },
             },
-            "20VPlastic": {
-                "duty_min": 32768,
-                "duty_max": 65535,
-                "value": 3,
-                "fullscale": 19,
-            },
-        },
         }
     
 
@@ -45,17 +47,25 @@ async def main():
         # data = await client.read_gatt_char(characteristic_uuid)
         # data[0] = 1
         a=0
+        level = float(1)
         while(1==1):
-            a += 1
-            transmission["LCD"]["Line1"]["text"] = str(a)
-            packets = packer.build_packets(transmission)
+
+            for i in range(0,180, 2):
+                sin = math.sin(math.radians(i))
+                v = (sin+1)
+
+                duty_cycle = int(float(v) * (65536/2)*level)
+
+                transmission["LCD"]["0"]["txt"] = str(duty_cycle)
+                transmission["meter"]["m1"]["val"] = str(duty_cycle)
+                mpack = msgpack.packb(transmission)
+                packets = packer.build_packets(mpack)
+                                
+                for packet in packets:
+                    print(packet)
+                    await client.write_gatt_char(characteristic_uuid, packet)
             
-            
-            for packet in packets:
-                print(packet)
-                await client.write_gatt_char(characteristic_uuid, packet)
-        
-            sleep(0.01)
+                #sleep(0.01)
 
 asyncio.run(main())
 

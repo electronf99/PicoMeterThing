@@ -12,10 +12,10 @@ class ble20Packets:
     # Take a Json String, encode it and build a list of 20 byte packets
     # including message id and number of packets
     # 
-    def build_packets(self, json_str):
-        json_str = json.dumps(json_str, separators=(",", ":"))
+    def build_packets(self, data):
 
-        encoded = json_str.encode("utf-8")
+        encoded = data
+
         chunk_size = self.max_payload
         chunks = [encoded[i : i + chunk_size] for i in range(0, len(encoded), chunk_size)]
         total_packets = len(chunks)
