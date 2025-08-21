@@ -9,6 +9,12 @@ from base64 import b64encode
 import math
 from ble20Packets import ble20Packets
 import msgpack
+from RouterInfo import RouterInfo
+import json
+
+
+
+ri = RouterInfo("192.168.0.1", "admin", "electronf11")
 
 
 async def main():
@@ -55,12 +61,27 @@ async def main():
         transmit_avg = 0
 
         while(1==1):
+            
 
+            
             for i in range(0,180, 2):
+
+                traffic = json.loads(ri.get_traffic())
+
+                print(traffic['speed']['rx'])
+                duty_cycle = int((traffic['speed']['rx'] / 120) * 32768 + 32768)
+
+
+                if duty_cycle > 65535:
+                    duty_cycle = 65535
+
+                print(duty_cycle)
+
                 sin = math.sin(math.radians(i))
                 v = (sin+1)
 
-                duty_cycle = int(float(v) * (65536/2)*level)
+                #duty_cycle = int(float(v) * (65536/2)*level)
+                
                 transmission["meter"]["m1"]["val"] = str(duty_cycle)
 
                 
