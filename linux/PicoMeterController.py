@@ -14,7 +14,7 @@ import json
 
 
 
-ri = RouterInfo("192.168.0.1", "admin", "electronf11")
+# ri = RouterInfo("192.168.0.1", "admin", "electronf11")
 
 
 async def main():
@@ -66,21 +66,21 @@ async def main():
             
             for i in range(0,180, 2):
 
-                traffic = json.loads(ri.get_traffic())
+                # traffic = json.loads(ri.get_traffic())
 
-                print(traffic['speed']['rx'])
-                duty_cycle = int((traffic['speed']['rx'] / 120) * 32768 + 32768)
+                # print(traffic['speed']['rx'])
+                # duty_cycle = int((traffic['speed']['rx'] / 120) * 32768 + 32768)
 
 
-                if duty_cycle > 65535:
-                    duty_cycle = 65535
+                # if duty_cycle > 65535:
+                #     duty_cycle = 65535
 
-                print(duty_cycle)
+                # print(duty_cycle)
 
                 sin = math.sin(math.radians(i))
                 v = (sin+1)
 
-                #duty_cycle = int(float(v) * (65536/2)*level)
+                duty_cycle = int(float(v) * (65536/2)*level)
                 
                 transmission["meter"]["m1"]["val"] = str(duty_cycle)
 
