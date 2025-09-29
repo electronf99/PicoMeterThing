@@ -1,5 +1,5 @@
 # Import necessary modules
-from machine import PWM
+from machine import PWM, I2C, Pin
 import machine
 import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
@@ -11,17 +11,23 @@ ble = bluetooth.BLE()
 # Create an instance of the BLESimplePeripheral class with the BLE object
 lcd = LCD1602.begin_4bit(rs=16, e=17, db_7_to_4=[21, 20, 19, 18])
 
+# Turn backlight down
+backlight_pin = machine.PWM(machine.Pin(28))
+backlight_pin.freq(1000)
+backlight_pin.duty_u16(16000)
+
 # Set PWM frequency
 frequency = 5000
+
 
 # Set up PWM Pin
 m1_volt_pin = machine.Pin(22)
 m1_volt_meter = PWM(m1_volt_pin)
 m1_volt_meter.freq(frequency)
 
-# m2_volt_pin = machine.Pin(2)
-# m2_volt_meter = PWM(m2_volt_pin)
-# m2_volt_meter.freq(frequency)
+m2_volt_pin = machine.Pin(15)
+m2_volt_meter = PWM(m2_volt_pin)
+m2_volt_meter.freq(frequency)
 
 
 
@@ -113,9 +119,8 @@ def update_traffic(data):
     #moving_iron_volts = data["meter"]["m1"]["v"]
     moving_iron_volts = min(62000, data["meter"]["m1"]["v"])
     m1_volt_meter.duty_u16(int(moving_iron_volts))
-    
-    # m2_volts = data["meter"]["m2"]["v"]
-    # m2_volt_meter.duty_u16(int(1000))
+    m2_volts = data["meter"]["m2"]["v"]
+    m2_volt_meter.duty_u16(int(m2_volts))
 
 
     lcd.write_text(0,0,LCDLine0)
@@ -138,20 +143,23 @@ def on_rx(data):
         full_payload = b""
         for packet in rx_packets:
             full_payload = full_payload + packet
-                    
+
+                   
         message = decode(full_payload)
         print(total_packets, message)
-        #pprint(message)
+
         update_traffic(message)
 
 
 if __name__ == "__main__":
     
+    print(">>------------")
     sp = BLESimplePeripheral(ble, "pico2w")
+    print("------------<<")
    
     # Start an infinite loop
     while True:
         if sp.is_connected():  # Check if a BLE connection is established
             sp.on_write(on_rx)  # Set the callback function for data reception
         else:
-            m1_volt_meter.duty_u16(int(0))
+            m1_volt_meter.duty_u16(int(32768))
