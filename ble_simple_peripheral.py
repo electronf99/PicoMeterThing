@@ -1,9 +1,4 @@
-# This example demonstrates a UART periperhal.
-
 import bluetooth
-import random
-import struct
-import time
 from ble_advertising import advertising_payload
 
 from micropython import const

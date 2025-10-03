@@ -1,28 +1,39 @@
 # Import necessary modules
-from machine import PWM, Pin, I2C
+from machine import PWM, Pin, SoftI2C
+from pico_i2c_lcd import I2cLcd
 import machine
 import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
-from pico_i2c_lcd import I2cLcd
+from lcd1602 import LCD1602
 from time import sleep
 
-
+# Setup I2C LCD
 # Define the LCD I2C address and dimensions
 I2C_ADDR = 0x27
 I2C_NUM_ROWS = 2
 I2C_NUM_COLS = 16
 
 # Initialize I2C and LCD objects
-i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=1000000)
-i2clcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)    
-i2clcd.clear()
-i2clcd.putstr("BT Listening..")
+i2c = SoftI2C(sda=Pin(4), scl=Pin(5), freq=400000)
+i2clcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)
+
+
+
 
 # Create a Bluetooth Low Energy (BLE) object
 ble = bluetooth.BLE()
 
+# Create an instance of the BLESimplePeripheral class with the BLE object
+lcd = LCD1602.begin_4bit(rs=16, e=17, db_7_to_4=[21, 20, 19, 18])
+
+# Turn backlight down
+backlight_pin = machine.PWM(machine.Pin(28))
+backlight_pin.freq(1000)
+backlight_pin.duty_u16(16000)
+
 # Set PWM frequency
 frequency = 5000
+
 
 # Set up PWM Pin
 m1_volt_pin = machine.Pin(22)
@@ -33,7 +44,7 @@ m2_volt_pin = machine.Pin(15)
 m2_volt_meter = PWM(m2_volt_pin)
 m2_volt_meter.freq(frequency)
 
-displayed = 0
+
 
 rx_packets = []
 
@@ -117,32 +128,25 @@ def decode(data):
 
 def update_traffic(data):
 
-    try:
-        LCDLine0 = data['LCD']['0'][:16]
-        LCDLine1 = data['LCD']['1'][:16]
-    
-        #moving_iron_volts = data["meter"]["m1"]["v"]
-        moving_iron_volts = min(62000, data["meter"]["m1"]["v"])
-        m1_volt_meter.duty_u16(int(moving_iron_volts))
-        m2_volts = data["meter"]["m2"]["v"]
-        m2_volt_meter.duty_u16(int(m2_volts))
-    except Exception as e:
-        print(e)
+    LCDLine0 = data['LCD']['0']
+    LCDLine1 = data['LCD']['1']
+  
+    #moving_iron_volts = data["meter"]["m1"]["v"]
+    moving_iron_volts = min(62000, data["meter"]["m1"]["v"])
+    m1_volt_meter.duty_u16(int(moving_iron_volts))
+    m2_volts = data["meter"]["m2"]["v"]
+    m2_volt_meter.duty_u16(int(m2_volts))
 
 
+    lcd.write_text(0,0,LCDLine0)
+    lcd.write_text(0,1,LCDLine1)
+
+    i2clcd.move_to(0,1)
+    i2clcd.putstr(LCDLine0)
+    i2clcd.move_to(0,0)
+    i2clcd.putstr(LCDLine1)
 
 
-    global displayed
-    if displayed == 5:
-        i2clcd.move_to(0,1)
-        i2clcd.putstr(LCDLine0)
-        i2clcd.move_to(0,0)
-        i2clcd.putstr(LCDLine1)
-        displayed = 0
-    else:
-        displayed += 1
-    
-    
     
 
 # Define a callback function to handle received data
@@ -179,6 +183,5 @@ if __name__ == "__main__":
     while True:
         if sp.is_connected():  # Check if a BLE connection is established
             sp.on_write(on_rx)  # Set the callback function for data reception
-            # print(".", end="")
         else:
             m1_volt_meter.duty_u16(int(32768))
