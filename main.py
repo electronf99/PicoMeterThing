@@ -48,13 +48,13 @@ global_data = {}
 
 # Define a backslash-like character
 custom_0 = [
+    0b00100,
     0b10101,
     0b01110,
     0b00100,
     0b00000,
     0b00000,
     0b00000,
-    0b00100,
     0b00100
 ]
 i2clcd.custom_char(0,custom_0)
