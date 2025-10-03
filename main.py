@@ -5,7 +5,7 @@ import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
 from pico_i2c_lcd import I2cLcd
 from time import sleep
-
+from msgpack_decoder import decode
 
 # Define the LCD I2C address and dimensions
 I2C_ADDR = 0x27
@@ -14,7 +14,11 @@ I2C_NUM_COLS = 16
 
 # Initialize I2C and LCD objects
 i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=1000000)
-i2clcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)    
+i2clcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)
+
+
+
+
 i2clcd.clear()
 i2clcd.putstr("BT Listening..")
 
@@ -35,7 +39,112 @@ m2_volt_meter.freq(frequency)
 
 displayed = 0
 
+spinner = ['-', '\\', '|', '/']
+spincount = 0
+
 rx_packets = []
+global_data = {}
+
+
+# Define a backslash-like character
+custom_0 = [
+    0b10101,
+    0b01110,
+    0b00100,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100
+]
+i2clcd.custom_char(0,custom_0)
+
+custom_1 = [
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+    0b00100,
+    0b00000,
+    0b00000,
+    0b00100
+]
+i2clcd.custom_char(1,custom_1)
+
+custom_2 = [
+    0b00000,
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+    0b00100,
+    0b00000,
+    0b00000
+]
+i2clcd.custom_char(2,custom_2)
+
+custom_3 = [
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+    0b00100,
+    0b00000
+]
+i2clcd.custom_char(3,custom_3)
+
+custom_4 = [
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+    0b00100,
+ ]
+i2clcd.custom_char(4,custom_4)
+
+custom_5 = [
+    0b00100,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+]
+i2clcd.custom_char(5, custom_5)
+
+
+custom_6 = [
+    0b01110,
+    0b00100,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100,
+    0b10101,
+]
+i2clcd.custom_char(6, custom_6)
+
+
+custom_7 = [
+    0b10101,
+    0b01110,
+    0b00100,    
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00100,
+    0b00100,
+]
+i2clcd.custom_char(7, custom_7)
+
 
 def pprint(obj, indent=0):
     spacing = '  ' * indent
@@ -49,74 +158,14 @@ def pprint(obj, indent=0):
     else:
         print(f"{spacing}{obj}")
 
-def decode(data):
-    i = 0
-
-    def read():
-        nonlocal i
-        val = data[i]
-        i += 1
-        return val
-
-    def read_bytes(n):
-        nonlocal i
-        val = data[i:i+n]
-        i += n
-        return val
-
-    def unpack():
-        prefix = read()
-
-        # FixInt (positive)
-        if prefix <= 0x7f:
-            return prefix
-
-        # FixMap
-        elif 0x80 <= prefix <= 0x8f:
-            size = prefix & 0x0f
-            obj = {}
-            for _ in range(size):
-                key = unpack()
-                val = unpack()
-                obj[key] = val
-            return obj
-
-        # FixArray
-        elif 0x90 <= prefix <= 0x9f:
-            size = prefix & 0x0f
-            return [unpack() for _ in range(size)]
-
-        # FixStr
-        elif 0xa0 <= prefix <= 0xbf:
-            size = prefix & 0x1f
-            return read_bytes(size).decode()
-
-        # uint8
-        elif prefix == 0xcc:
-            return read()
-
-        # uint16
-        elif prefix == 0xcd:
-            return int.from_bytes(read_bytes(2), 'big')
-
-        # uint32
-        elif prefix == 0xce:
-            return int.from_bytes(read_bytes(4), 'big')
-
-        # str8
-        elif prefix == 0xd9:
-            size = read()
-            return read_bytes(size).decode()
-
-        else:
-            raise ValueError("Unsupported prefix: {}".format(hex(prefix)))
-
-    return unpack()
-
-
 
 def update_traffic(data):
 
+    global global_data
+    global spincount
+
+    global_data = data
+    
     try:
         LCDLine0 = data['LCD']['0'][:16]
         LCDLine1 = data['LCD']['1'][:16]
@@ -129,20 +178,17 @@ def update_traffic(data):
     except Exception as e:
         print(e)
 
-
-
-
-    global displayed
-    if displayed == 5:
-        i2clcd.move_to(0,1)
-        i2clcd.putstr(LCDLine0)
-        i2clcd.move_to(0,0)
-        i2clcd.putstr(LCDLine1)
-        displayed = 0
-    else:
-        displayed += 1
+    i2clcd.move_to(0,1)
+    i2clcd.putstr(LCDLine0)
+    i2clcd.move_to(0,0)
+    i2clcd.putstr(LCDLine1)
     
-    
+    i2clcd.move_to(15,1)
+    i2clcd.putstr(chr(spincount))
+    spincount += 1
+    if spincount == 8:
+        spincount = 0
+
     
 
 # Define a callback function to handle received data
@@ -180,5 +226,7 @@ if __name__ == "__main__":
         if sp.is_connected():  # Check if a BLE connection is established
             sp.on_write(on_rx)  # Set the callback function for data reception
             # print(".", end="")
+            sleep(10)
+            print("Slept for 1")
         else:
             m1_volt_meter.duty_u16(int(32768))
