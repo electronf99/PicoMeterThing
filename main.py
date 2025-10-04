@@ -6,6 +6,7 @@ from ble_simple_peripheral import BLESimplePeripheral
 from pico_i2c_lcd import I2cLcd
 from time import sleep
 from msgpack_decoder import decode
+from custom_char import get_arrow_chars
 
 # Define the LCD I2C address and dimensions
 I2C_ADDR = 0x27
@@ -17,13 +18,10 @@ i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=1000000)
 i2clcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)
 
 
-
-
 i2clcd.clear()
 i2clcd.putstr("BT Listening..")
 
-# Create a Bluetooth Low Energy (BLE) object
-ble = bluetooth.BLE()
+
 
 # Set PWM frequency
 frequency = 5000
@@ -44,106 +42,12 @@ spincount = 0
 
 rx_packets = []
 
+custom = get_arrow_chars()
 
-# Define a backslash-like character
-custom_0 = [
-    0b00100,
-    0b10101,
-    0b01110,
-    0b00100,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00100
-]
-i2clcd.custom_char(0,custom_0)
-
-custom_1 = [
-    0b00100,
-    0b00100,
-    0b10101,
-    0b01110,
-    0b00100,
-    0b00000,
-    0b00000,
-    0b00100
-]
-i2clcd.custom_char(1,custom_1)
-
-custom_2 = [
-    0b00000,
-    0b00100,
-    0b00100,
-    0b10101,
-    0b01110,
-    0b00100,
-    0b00000,
-    0b00000
-]
-i2clcd.custom_char(2,custom_2)
-
-custom_3 = [
-    0b00000,
-    0b00000,
-    0b00100,
-    0b00100,
-    0b10101,
-    0b01110,
-    0b00100,
-    0b00000
-]
-i2clcd.custom_char(3,custom_3)
-
-custom_4 = [
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00100,
-    0b00100,
-    0b10101,
-    0b01110,
-    0b00100,
- ]
-i2clcd.custom_char(4,custom_4)
-
-custom_5 = [
-    0b00100,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00100,
-    0b00100,
-    0b10101,
-    0b01110,
-]
-i2clcd.custom_char(5, custom_5)
-
-
-custom_6 = [
-    0b01110,
-    0b00100,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00100,
-    0b00100,
-    0b10101,
-]
-i2clcd.custom_char(6, custom_6)
-
-
-custom_7 = [
-    0b10101,
-    0b01110,
-    0b00100,    
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00100,
-    0b00100,
-]
-i2clcd.custom_char(7, custom_7)
-
+a=0
+for custom_char in custom:
+    i2clcd.custom_char(a,custom_char)
+    a += 1
 
 def pprint(obj, indent=0):
     spacing = '  ' * indent
@@ -214,6 +118,8 @@ def on_rx(data):
 
 if __name__ == "__main__":
     
+    # Create a Bluetooth Low Energy (BLE) object
+    ble = bluetooth.BLE()
     print(">>------------")
     sp = BLESimplePeripheral(ble, "pico2w")
     print("------------<<")
@@ -222,8 +128,6 @@ if __name__ == "__main__":
     while True:
         if sp.is_connected():  # Check if a BLE connection is established
             sp.on_write(on_rx)  # Set the callback function for data reception
-            # print(".", end="")
             sleep(1)
-            print("Slept for 1")
         else:
             m1_volt_meter.duty_u16(int(32768))
