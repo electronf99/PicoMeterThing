@@ -43,7 +43,6 @@ spinner = ['-', '\\', '|', '/']
 spincount = 0
 
 rx_packets = []
-global_data = {}
 
 
 # Define a backslash-like character
@@ -161,11 +160,8 @@ def pprint(obj, indent=0):
 
 def update_traffic(data):
 
-    global global_data
     global spincount
-
-    global_data = data
-    
+   
     try:
         LCDLine0 = data['LCD']['0'][:16]
         LCDLine1 = data['LCD']['1'][:16]
@@ -174,7 +170,8 @@ def update_traffic(data):
         moving_iron_volts = min(62000, data["meter"]["m1"]["v"])
         m1_volt_meter.duty_u16(int(moving_iron_volts))
         m2_volts = data["meter"]["m2"]["v"]
-        m2_volt_meter.duty_u16(int(m2_volts))
+        if m2_volts > 0:
+            m2_volt_meter.duty_u16(int(m2_volts))
     except Exception as e:
         print(e)
 
@@ -226,7 +223,7 @@ if __name__ == "__main__":
         if sp.is_connected():  # Check if a BLE connection is established
             sp.on_write(on_rx)  # Set the callback function for data reception
             # print(".", end="")
-            sleep(10)
+            sleep(1)
             print("Slept for 1")
         else:
             m1_volt_meter.duty_u16(int(32768))
