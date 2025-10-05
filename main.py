@@ -79,9 +79,9 @@ def update_traffic(data):
     except Exception as e:
         print(e)
 
-    i2clcd.move_to(0,1)
-    i2clcd.putstr(LCDLine0)
     i2clcd.move_to(0,0)
+    i2clcd.putstr(LCDLine0)
+    i2clcd.move_to(0,1)
     i2clcd.putstr(LCDLine1)
     
     i2clcd.move_to(15,1)
