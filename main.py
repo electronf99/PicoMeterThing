@@ -101,7 +101,7 @@ def on_rx(data):
 
     global rx_packets
     
-    seq, total_packets, msg_id = data[0], data[1], data[2]
+    seq, total_packets, msg_id = data[0], data[1], data[2]  # noqa: F841
     if(seq==0):
         rx_packets = []
     
