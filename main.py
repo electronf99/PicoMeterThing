@@ -65,10 +65,13 @@ def pprint(obj, indent=0):
 def update_traffic(data):
 
     global spincount
-   
+    
+    LCDLine0 = ""
+    LCDLine1 = ""
+
     try:
-        LCDLine0 = data['LCD']['0'][:16]
-        LCDLine1 = data['LCD']['1'][:16]
+        LCDLine0 = data['LCD']['0'][:15]
+        LCDLine1 = data['LCD']['1'][:15]
     
         #moving_iron_volts = data["meter"]["m1"]["v"]
         moving_iron_volts = min(62000, data["meter"]["m1"]["v"])
@@ -86,6 +89,7 @@ def update_traffic(data):
     
     i2clcd.move_to(15,1)
     i2clcd.putstr(chr(spincount))
+    
     spincount += 1
     if spincount == 8:
         spincount = 0
